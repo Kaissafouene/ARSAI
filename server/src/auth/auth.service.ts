@@ -1,107 +1,101 @@
-import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { UsersService } from '../users/users.service';
-import { UserRole, assertValidRole } from './user-role.enum';
-import { isPasswordComplex, recordFailedAttempt, isLockedOut, resetLockout } from './password.utils';
-import { randomBytes } from 'crypto';
-import { addMinutes } from 'date-fns';
-
-// Assume PrismaService is available for DB access
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma, User } from '@prisma/client';
 
 @Injectable()
-export class AuthService {
-  constructor(
-    private jwtService: JwtService,
-    private usersService: UsersService,
-    private prisma: PrismaService, // Add PrismaService for DB access
-  ) {}
+export class UsersService {
+  constructor(private prisma: PrismaService) {}
 
-  async validateUser(email: string, password: string) {
-    if (isLockedOut(email)) {
-      throw new ForbiddenException('Account locked due to too many failed attempts. Try again later.');
+  // --- Core CRUD Operations ---
+
+  async create(data: Prisma.UserCreateInput): Promise<User> {
+    try {
+      // Le champ 'permissions' qui causait l'erreur a été retiré de cet objet.
+      return this.prisma.user.create({
+        data,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new BadRequestException('A user with this email already exists.');
+      }
+      console.error('Failed to create user:', error);
+      throw new InternalServerErrorException('Could not create user.');
     }
-    const user = await this.usersService.findByEmail(email);
-    if (user && await bcrypt.compare(password, user.password)) {
-      resetLockout(email);
-      const { password, ...result } = user;
-      await this.usersService.logAction(user.id, 'LOGIN_SUCCESS');
-      return result;
-    }
-    const locked = recordFailedAttempt(email);
-    if (user) await this.usersService.logAction(user.id, 'LOGIN_FAIL');
-    if (locked) throw new ForbiddenException('Account locked due to too many failed attempts.');
-    throw new UnauthorizedException('Invalid credentials');
   }
 
-  async login(user: any) {
-    const payload = { email: user.email, sub: user.id, role: user.role };
-    let expiresIn = process.env.JWT_EXPIRES_IN || '1d';
-    if (expiresIn.startsWith('"') && expiresIn.endsWith('"')) {
-      expiresIn = expiresIn.slice(1, -1);
-    }
-    return {
-      access_token: this.jwtService.sign(payload, { expiresIn }),
-      user: { id: user.id, email: user.email, fullName: user.fullName, role: user.role }
-    };
+  async findAll(params: {
+    skip?: number;
+    take?: number;
+    cursor?: Prisma.UserWhereUniqueInput;
+    where?: Prisma.UserWhereInput;
+    orderBy?: Prisma.UserOrderByWithRelationInput;
+  }): Promise<User[]> {
+    const { skip, take, cursor, where, orderBy } = params;
+    return this.prisma.user.findMany({
+      skip,
+      take,
+      cursor,
+      where,
+      orderBy,
+    });
   }
 
-  async register(data: { email: string; password: string; fullName: string; role: string }) {
-    assertValidRole(data.role);
-    if (!isPasswordComplex(data.password)) {
-      throw new BadRequestException('Password does not meet complexity requirements.');
+  async findOne(id: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found.`);
     }
-    // Check for existing user
-    const existing = await this.usersService.findByEmail(data.email);
-    if (existing) {
-      throw new BadRequestException('A user with this email already exists.');
-    }
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    const user = await this.usersService.create({ ...data, password: hashedPassword });
-    await this.usersService.logAction(user.id, 'REGISTER');
     return user;
   }
 
-  // --- Password Reset Methods ---
-
-  async initiatePasswordReset(email: string) {
-    const user = await this.usersService.findByEmail(email);
-    if (!user) return; // Don't reveal user existence
-
-    const token = randomBytes(32).toString('hex');
-    const expiresAt = addMinutes(new Date(), 30);
-
-    await this.prisma.passwordResetToken.create({
-      data: {
-        userId: user.id,
-        token,
-        expiresAt,
-      }
+  async findByEmail(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: { email },
     });
-
-    // TODO: Send email with reset link (e.g., https://yourapp/reset?token=...)
-    // Use nodemailer or Microsoft 365 API
-    await this.usersService.logAction(user.id, 'PASSWORD_RESET_REQUEST', { token });
   }
 
-  async confirmPasswordReset(token: string, newPassword: string) {
-    const reset = await this.prisma.passwordResetToken.findUnique({ where: { token } });
-    if (!reset || reset.used || reset.expiresAt < new Date()) {
-      throw new BadRequestException('Invalid or expired token');
+  async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException(`User with ID "${id}" not found.`);
+      }
+      throw new InternalServerErrorException('Could not update user.');
     }
-    if (!isPasswordComplex(newPassword)) {
-      throw new BadRequestException('Password does not meet complexity requirements.');
+  }
+
+  async remove(id: string): Promise<User> {
+    try {
+      return await this.prisma.user.delete({
+        where: { id },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException(`User with ID "${id}" not found.`);
+      }
+      throw new InternalServerErrorException('Could not delete user.');
     }
-    const hashed = await bcrypt.hash(newPassword, 10);
-    await this.prisma.user.update({
-      where: { id: reset.userId },
-      data: { password: hashed }
-    });
-    await this.prisma.passwordResetToken.update({
-      where: { token },
-      data: { used: true }
-    });
-    await this.usersService.logAction(reset.userId, 'PASSWORD_RESET');
+  }
+  
+  // --- Utility & Business Logic Methods ---
+  
+  async logAction(userId: string, action: string, details?: object) {
+    try {
+      await this.prisma.auditLog.create({
+        data: {
+          userId,
+          action,
+          details: details ? JSON.stringify(details) : undefined,
+        },
+      });
+    } catch (error) {
+      console.error(`Failed to log action "${action}" for user ${userId}:`, error);
+    }
   }
 }
