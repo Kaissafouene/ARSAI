@@ -22,13 +22,23 @@ export class AuthService {
     if (isLockedOut(email)) {
       throw new ForbiddenException('Account locked due to too many failed attempts. Try again later.');
     }
+    console.log('Attempting to find user with email:', email);
     const user = await this.usersService.findByEmail(email);
-    if (user && await bcrypt.compare(password, user.password)) {
-      resetLockout(email);
-      const { password, ...result } = user;
-      await this.usersService.logAction(user.id, 'LOGIN_SUCCESS');
-      return result;
+    console.log('User found:', user ? 'Yes' : 'No');
+    
+    if (user) {
+      console.log('Comparing passwords...');
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      console.log('Password is valid:', isPasswordValid ? 'Yes' : 'No');
+      
+      if (isPasswordValid) {
+        resetLockout(email);
+        const { password, ...result } = user;
+        await this.usersService.logAction(user.id, 'LOGIN_SUCCESS');
+        return result;
+      }
     }
+    
     const locked = recordFailedAttempt(email);
     if (user) await this.usersService.logAction(user.id, 'LOGIN_FAIL');
     if (locked) throw new ForbiddenException('Account locked due to too many failed attempts.');
