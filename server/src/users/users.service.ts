@@ -18,9 +18,15 @@ export class UsersService {
     // Set default values
     const userData = {
       ...data,
-      active: data.active ?? true,
-      assignedClients: data.assignedClients || []
+      active: data.active ?? true
     };
+    
+    // Handle client relationships separately if needed
+    if (data.assignedClients && data.assignedClients.length > 0) {
+      userData.clientsManaged = {
+        connect: data.assignedClients.map(clientId => ({ id: clientId }))
+      };
+    }
     const user = await this.prisma.user.create({ data: userData });
     await this.logAction(user.id, 'USER_CREATE', { data: { ...userData, password: undefined } });
     return user;
