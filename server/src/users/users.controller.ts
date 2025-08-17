@@ -49,7 +49,6 @@ export class UsersController {
     phone?: string;
     position?: string;
     photo?: string;
-    permissions?: string[];
     assignedClients?: string[];
   }) {
     // Validate input
@@ -83,7 +82,6 @@ export class UsersController {
       phone?: string;
       position?: string;
       photo?: string;
-      permissions?: string[];
       assignedClients?: string[];
       active?: boolean;
     }>
