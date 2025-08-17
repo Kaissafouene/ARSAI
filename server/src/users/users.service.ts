@@ -19,7 +19,6 @@ export class UsersService {
     const userData = {
       ...data,
       active: data.active ?? true,
-      permissions: data.permissions || [],
       assignedClients: data.assignedClients || []
     };
     const user = await this.prisma.user.create({ data: userData });
