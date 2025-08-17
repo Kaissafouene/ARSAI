@@ -6,14 +6,16 @@ import { UserRole, assertValidRole } from './user-role.enum';
 import { isPasswordComplex, recordFailedAttempt, isLockedOut, resetLockout } from './password.utils';
 import { randomBytes } from 'crypto';
 import { addMinutes } from 'date-fns';
+
+// Assume PrismaService is available for DB access
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
-export class AuthService { // <-- Le mot 'export' a été ajouté ici
+export class AuthService {
   constructor(
     private jwtService: JwtService,
     private usersService: UsersService,
-    private prisma: PrismaService,
+    private prisma: PrismaService, // Add PrismaService for DB access
   ) {}
 
   async validateUser(email: string, password: string) {
@@ -50,6 +52,7 @@ export class AuthService { // <-- Le mot 'export' a été ajouté ici
     if (!isPasswordComplex(data.password)) {
       throw new BadRequestException('Password does not meet complexity requirements.');
     }
+    // Check for existing user
     const existing = await this.usersService.findByEmail(data.email);
     if (existing) {
       throw new BadRequestException('A user with this email already exists.');
@@ -77,7 +80,8 @@ export class AuthService { // <-- Le mot 'export' a été ajouté ici
       }
     });
 
-    // TODO: Send email with reset link
+    // TODO: Send email with reset link (e.g., https://yourapp/reset?token=...)
+    // Use nodemailer or Microsoft 365 API
     await this.usersService.logAction(user.id, 'PASSWORD_RESET_REQUEST', { token });
   }
 
