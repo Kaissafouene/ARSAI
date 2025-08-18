@@ -2,27 +2,22 @@ import logging
 import time
 from functools import wraps
 from typing import Callable
-import sentry_sdk
-from sentry_sdk.integrations.fastapi import FastApiIntegration
-# La ligne suivante a été commentée car elle causait une erreur d'importation
-# from sentry_sdk.integrations.sqlalchemy import SqlAlchemyIntegration
+# import sentry_sdk  # Désactivé pour le déploiement
+# from sentry_sdk.integrations.fastapi import FastApiIntegration # Désactivé pour le déploiement
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from fastapi import Request, Response
 from fastapi.responses import PlainTextResponse
 import asyncio
 
-# Initialize Sentry
-sentry_sdk.init(
-    dsn="your-sentry-dsn-here",  # Replace with actual Sentry DSN
-    integrations=[
-        # Le paramètre "auto_enabling_integrations" a été retiré car il causait une erreur
-        FastApiIntegration(),
-        # La ligne suivante a été commentée pour correspondre à l'importation ci-dessus
-        # SqlAlchemyIntegration(), 
-    ],
-    traces_sample_rate=0.1,
-    environment="production"
-)
+# # L'initialisation de Sentry est complètement désactivée pour éviter les erreurs de DSN.
+# sentry_sdk.init(
+#     dsn="",  # Laissez vide pour désactiver
+#     integrations=[
+#         FastApiIntegration(),
+#     ],
+#     traces_sample_rate=0.1,
+#     environment="production"
+# )
 
 # Prometheus metrics
 REQUEST_COUNT = Counter(
@@ -78,7 +73,8 @@ def log_endpoint_call(endpoint_name: str):
                 duration = time.time() - start_time
                 logger.error(f"Error in {endpoint_name} after {duration:.2f}s: {str(e)}")
                 ML_ERRORS.labels(endpoint=endpoint_name, error_type=type(e).__name__).inc()
-                sentry_sdk.capture_exception(e)
+                # La capture d'exception Sentry est désactivée
+                # sentry_sdk.capture_exception(e)
                 raise
         return wrapper
     return decorator
