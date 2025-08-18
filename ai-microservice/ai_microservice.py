@@ -34,7 +34,7 @@ nlp = spacy.load("fr_core_news_sm")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], # Vous pouvez restreindre ceci en production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -821,6 +821,7 @@ async def make_automated_decision(data: Dict = Body(...), current_user = Depends
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Automated decision making failed: {str(e)}")
 
+# ### NOUVELLES ROUTES AJOUTÉES ###
 # MONITORING ENDPOINTS
 @app.get("/metrics")
 async def metrics():
@@ -833,16 +834,13 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "version": "3.0.0",
-        "features": [
-            "complaint_analysis", "sla_prediction", "anomaly_detection", 
-            "trend_forecasting", "confidence_scoring", "performance_analytics",
-            "authentication", "live_data_integration", "explainable_ai",
-            "document_classification", "pattern_recognition", "smart_routing",
-            "automated_decisions", "advanced_ml_models"
-        ]
+        "version": "2.0.0", # J'ai mis 2.0.0 comme dans le titre de votre API
     }
+# ### FIN DES NOUVELLES ROUTES ###
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import os
+    # Render fournit le port via une variable d'environnement
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
