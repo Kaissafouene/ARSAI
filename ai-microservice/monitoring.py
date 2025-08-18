@@ -9,13 +9,14 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from fastapi import Request, Response
 from fastapi.responses import PlainTextResponse
-import asyncio # J'ai déplacé cet import en haut par convention
+import asyncio
 
 # Initialize Sentry
 sentry_sdk.init(
     dsn="your-sentry-dsn-here",  # Replace with actual Sentry DSN
     integrations=[
-        FastApiIntegration(auto_enabling_integrations=False),
+        # Le paramètre "auto_enabling_integrations" a été retiré car il causait une erreur
+        FastApiIntegration(),
         # La ligne suivante a été commentée pour correspondre à l'importation ci-dessus
         # SqlAlchemyIntegration(), 
     ],
