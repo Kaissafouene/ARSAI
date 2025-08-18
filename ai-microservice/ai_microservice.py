@@ -29,7 +29,31 @@ from pattern_recognition import recurring_detector, temporal_analyzer
 from intelligent_automation import smart_router, decision_engine
 
 app = FastAPI(title="Enhanced ML Analytics API", version="2.0.0")
-nlp = spacy.load("fr_core_news_sm")
+
+# --- MODIFICATION POUR L'OPTIMISATION MÉMOIRE ---
+# On ne charge pas le modèle Spacy au démarrage.
+# nlp = spacy.load("fr_core_news_sm") # Ligne originale supprimée
+
+nlp_model = None  # On prépare une variable globale pour stocker le modèle
+
+def get_nlp_model():
+    """
+    Charge le modèle Spacy s'il n'est pas déjà en mémoire.
+    Ceci est une technique de "Lazy Loading" pour réduire la consommation de RAM au démarrage.
+    """
+    global nlp_model
+    if nlp_model is None:
+        logger.info("Chargement du modèle Spacy en mémoire pour la première fois...")
+        try:
+            nlp_model = spacy.load("fr_core_news_sm")
+            logger.info("Modèle Spacy chargé avec succès.")
+        except Exception as e:
+            logger.error(f"Erreur critique lors du chargement du modèle Spacy : {e}")
+            # Si le modèle ne peut pas être chargé, on lève une erreur pour que les endpoints échouent proprement.
+            raise HTTPException(status_code=503, detail="Le modèle de traitement du langage n'est pas disponible.")
+    return nlp_model
+# --- FIN DE LA MODIFICATION ---
+
 
 # Add CORS middleware
 app.add_middleware(
@@ -117,6 +141,11 @@ async def analyze(complaints: List[Dict], current_user = Depends(get_current_act
 @app.post("/suggestions")
 @log_endpoint_call("suggestions")
 async def suggestions(complaint: Dict = Body(...), current_user = Depends(get_current_active_user)):
+    # --- MODIFICATION POUR L'OPTIMISATION MÉMOIRE ---
+    # On charge le modèle uniquement quand cette fonction est appelée.
+    nlp = get_nlp_model()
+    # --- FIN DE LA MODIFICATION ---
+    
     # Use spaCy to extract entities and suggest a response
     desc = complaint.get("description", "")
     doc = nlp(desc)
@@ -834,7 +863,7 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "version": "2.0.0", # J'ai mis 2.0.0 comme dans le titre de votre API
+        "version": "2.0.0",
     }
 # ### FIN DES NOUVELLES ROUTES ###
 
