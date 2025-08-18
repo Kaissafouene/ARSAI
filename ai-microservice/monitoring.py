@@ -4,17 +4,20 @@ from functools import wraps
 from typing import Callable
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
-from sentry_sdk.integrations.sqlalchemy import SqlAlchemyIntegration
+# La ligne suivante a été commentée car elle causait une erreur d'importation
+# from sentry_sdk.integrations.sqlalchemy import SqlAlchemyIntegration
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from fastapi import Request, Response
 from fastapi.responses import PlainTextResponse
+import asyncio # J'ai déplacé cet import en haut par convention
 
 # Initialize Sentry
 sentry_sdk.init(
     dsn="your-sentry-dsn-here",  # Replace with actual Sentry DSN
     integrations=[
         FastApiIntegration(auto_enabling_integrations=False),
-        SqlAlchemyIntegration(),
+        # La ligne suivante a été commentée pour correspondre à l'importation ci-dessus
+        # SqlAlchemyIntegration(), 
     ],
     traces_sample_rate=0.1,
     environment="production"
@@ -103,5 +106,3 @@ async def metrics_middleware(request: Request, call_next):
 def get_metrics():
     """Get Prometheus metrics"""
     return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
-
-import asyncio
