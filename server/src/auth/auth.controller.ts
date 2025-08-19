@@ -1,13 +1,13 @@
 import { Body, Controller, Post, Req, UseGuards, Get, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { UsersService } from '../users/users.service'; // Assurez-vous que ce chemin d'import est correct
+import { UsersService } from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly usersService: UsersService // Ajout du UsersService
+    private readonly usersService: UsersService
   ) {}
 
   @Post('login')
@@ -30,14 +30,19 @@ export class AuthController {
     return { message: 'Logged out' };
   }
 
-  // --- ROUTE AJOUTÉE ---
+  // --- ROUTE CORRIGÉE ---
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   getProfile(@Request() req) {
-    // req.user.sub contient l'ID de l'utilisateur stocké dans le token JWT
-    return this.usersService.findOne(req.user.sub); 
+    // Le token JWT contient l'ID de l'utilisateur dans le champ 'sub'.
+    // La méthode pour trouver un utilisateur par son ID dans votre service est findOne.
+    // Nous nous assurons que l'ID est bien une chaîne de caractères.
+    const userId = req.user.sub;
+    if (typeof userId === 'string') {
+      return this.usersService.findOne(userId);
+    }
   }
-  // --- FIN DE L'AJOUT ---
+  // --- FIN DE LA CORRECTION ---
 
   @Post('password-reset-request')
   async passwordResetRequest(@Body() body: { email: string }) {
