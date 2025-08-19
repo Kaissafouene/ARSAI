@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import FinanceTracker from './pages/finance/FinanceTracker';
 import { useAuth } from './contexts/AuthContext';
 import Login from './pages/auth/Login';
-import Register from './pages-auth/Register'; // <-- Assurez-vous que ce chemin est correct aussi
+import Register from './pages/auth/Register'; 
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/dashboard/Dashboard';
 import BordereauxListPage from './pages/bordereaux/BordereauxList';
@@ -20,8 +20,7 @@ import AlertsModule from './pages/AlertsModule';
 import BODashboard from './pages/BODashboard';
 import ScanDashboard from './pages/ScanDashboard';
 // --- CHEMIN D'IMPORTATION CORRIGÉ ---
-// L'erreur indiquait un problème ici. J'ai supposé une structure plus standard.
-// VÉRIFIEZ que ce chemin correspond bien à l'emplacement de votre fichier.
+// L'erreur précédente indiquait un problème ici.
 import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard'; 
 
 const App: React.FC = () => {
