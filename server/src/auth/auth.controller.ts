@@ -30,19 +30,13 @@ export class AuthController {
     return { message: 'Logged out' };
   }
 
-  // --- ROUTE CORRIGÉE ---
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   getProfile(@Request() req) {
-    // Le token JWT contient l'ID de l'utilisateur dans le champ 'sub'.
-    // La méthode pour trouver un utilisateur par son ID dans votre service est findOne.
-    // Nous nous assurons que l'ID est bien une chaîne de caractères.
     const userId = req.user.sub;
-    if (typeof userId === 'string') {
-      return this.usersService.findOne(userId);
-    }
+    // On appelle la méthode qui existe vraiment : findById
+    return this.usersService.findById(userId); 
   }
-  // --- FIN DE LA CORRECTION ---
 
   @Post('password-reset-request')
   async passwordResetRequest(@Body() body: { email: string }) {
