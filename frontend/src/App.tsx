@@ -20,9 +20,13 @@ import WorkflowPage from './pages/workflow/WorkflowPage'; // <-- add this import
 import AlertsModule from './pages/AlertsModule';
 import BODashboard from './pages/BODashboard';
 import ScanDashboard from './pages/ScanDashboard';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import SuperAdminDashboard from './pages-super-admin/SuperAdminDashboard';
 
 const App: React.FC = () => {
+  // --- AJOUT DE LA LIGNE DE DÉBOGAGE ---
+  console.log("L'URL de l'API que l'application essaie d'utiliser est :", process.env.REACT_APP_API_URL);
+  // --- FIN DE L'AJOUT ---
+
   const { user, loading } = useAuth();
 
   if (loading) {
