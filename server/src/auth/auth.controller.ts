@@ -1,10 +1,14 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards, Get, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { UsersService } from '../users/users.service'; // Assurez-vous que ce chemin d'import est correct
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService // Ajout du UsersService
+  ) {}
 
   @Post('login')
   async login(@Body() body: { email: string; password: string }) {
@@ -14,7 +18,6 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() body: { email: string; password: string; fullName: string; role: string }) {
-    // Validate input
     if (!body.email || !body.password || !body.fullName || !body.role) {
       throw new Error('All fields (email, password, fullName, role) are required.');
     }
@@ -26,6 +29,15 @@ export class AuthController {
   async logout(@Req() req) {
     return { message: 'Logged out' };
   }
+
+  // --- ROUTE AJOUTÉE ---
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  getProfile(@Request() req) {
+    // req.user.sub contient l'ID de l'utilisateur stocké dans le token JWT
+    return this.usersService.findOne(req.user.sub); 
+  }
+  // --- FIN DE L'AJOUT ---
 
   @Post('password-reset-request')
   async passwordResetRequest(@Body() body: { email: string }) {

@@ -26,6 +26,7 @@ export const register = async (userData: any) => {
     const { data } = await LocalAPI.post('/auth/register', userData);
     return data;
   } catch (error) {
+    // Ce bloc 'catch' est probablement pour le développement, il peut être retiré en production
     return {
       user: {
         id: Date.now().toString(),
@@ -51,7 +52,10 @@ export const logout = async () => {
   return { success: true };
 };
 
+// --- FONCTION CORRIGÉE ---
 export const getCurrentUser = async () => {
-  const { data } = await LocalAPI.get('/auth/me');
+  // On appelle la route '/auth/profile' qui existe maintenant dans le backend
+  const { data } = await LocalAPI.get('/auth/profile');
   return data;
 };
+// --- FIN DE LA CORRECTION ---
