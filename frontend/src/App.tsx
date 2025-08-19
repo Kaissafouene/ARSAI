@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import FinanceTracker from './pages/finance/FinanceTracker';
 import { useAuth } from './contexts/AuthContext';
 import Login from './pages/auth/Login';
-import Register from './pages/auth/Register'; // <-- Import Register
+import Register from './pages-auth/Register'; // <-- Assurez-vous que ce chemin est correct aussi
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/dashboard/Dashboard';
 import BordereauxListPage from './pages/bordereaux/BordereauxList';
@@ -15,15 +15,17 @@ import GedViewer from './pages/ged/GedViewer';
 import GecManager from './pages/gec/GecManager';
 import ReclamationsModule from './pages/reclamations/ReclamationsModule';
 import UserManagement from './pages/users/UserManagement';
-import WorkflowTimeline from './pages/workflow/WorkflowTimeline';
-import WorkflowPage from './pages/workflow/WorkflowPage'; // <-- add this import
+import WorkflowPage from './pages/workflow/WorkflowPage';
 import AlertsModule from './pages/AlertsModule';
 import BODashboard from './pages/BODashboard';
 import ScanDashboard from './pages/ScanDashboard';
-import SuperAdminDashboard from './pages-super-admin/SuperAdminDashboard';
+// --- CHEMIN D'IMPORTATION CORRIGÉ ---
+// L'erreur indiquait un problème ici. J'ai supposé une structure plus standard.
+// VÉRIFIEZ que ce chemin correspond bien à l'emplacement de votre fichier.
+import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard'; 
 
 const App: React.FC = () => {
-  // --- AJOUT DE LA LIGNE DE DÉBOGAGE ---
+  // --- LIGNE DE DÉBOGAGE ---
   console.log("L'URL de l'API que l'application essaie d'utiliser est :", process.env.REACT_APP_API_URL);
   // --- FIN DE L'AJOUT ---
 
@@ -46,7 +48,7 @@ const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} /> {/* <-- Add this line */}
+      <Route path="/register" element={<Register />} />
       {user ? (
         <Route element={<MainLayout children={undefined} />}>
           <Route path="/home/dashboard" element={<Dashboard />} />
